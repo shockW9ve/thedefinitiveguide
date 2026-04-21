@@ -23,30 +23,90 @@ onmessage = function (message) {
   const iterations = new Uint32Array(imageData.data.buffer);
 
   // Now we can begin the computation. There are three nested for loops here.
-  //
+  // The outer two loop over the rows and columns of pixels, and the inner
+  // loop iterates each pixel to see if it "escapes" or not. The various
+  // loop variables are the following:
+  // - row and column are integers representing the pixel coordinate.
+  // - x and y represent the complex point for each pixel: x + yi.
+  // - index is the index in the iterations array for the current pixel.
+  // - n tracks the number of iterations for each pixel.
+  // - max and min track the largest and smallest number of iterations
+  //   we've seen so far for any pixel in the rectangle.
   let index = 0,
     max = 0,
     min = maxIterations;
 
   for (let row = 0, y = y0; row < height; row++, y += perPixel) {
     for (let column = 0, x = x0; column < width; column++, x += perPixel) {
-      let n;
+      // For each pixel we start with the complex number c = x + yi.
+      // Then we repeatedly compute the complex number z(n + 1) based on
+      // this recursive formula:
+      //    z(0) = c
+      //    z(n + 1) = z(n)^2 + c
+      // If |z(n)| (the magnitude of z(n)) is > 2, then the
+      // pixel is not part of the set and we stop after n iterations.
+      let n; // The numbe o fiterations so far
       let r = x,
-        i = y;
+        i = y; // Start with z(0) set to c
       for (n = 0; n < maxIterations; n++) {
         let rr = r * r,
-          ii = i * i;
+          ii = i * i; // Square the two parts of z(n).
         if (rr + ii > 4) {
-          break;
+          // If |z(n)|^2 is > 4 then
+          break; // we've escaped and can stop iterating.
         }
-        i = 2 * r * i + y;
-        r = rr - ii + x;
+        i = 2 * r * i + y; // Compute imaginary part of z(n + 1)
+        r = rr - ii + x; // And the real part of the  z(n + 1)
       }
-      iterations[index++] = n;
-      if (n > max) max = n;
-      if (n < max) min = n;
+      iterations[index++] = n; // Remember # iterations for each pixel.
+      if (n > max) max = n; // Track the maximum number we've seen.
+      if (n < max) min = n; // And the minimum as well.
     }
   }
 
+  // When the computation is complete, send the results back to the parent
+  // thread. The imageData object will be copied, but the giant ArrayBuffer
+  // if contains will be transferred for a nice permance boost.
   postMessage({ tile, imageData, min, max }, [imageData.data.buffer]);
 };
+
+/*
+ * This class represents a subrectangle of a canvas or image. We use Tiles to
+ * divide a canvas into regions that can be processed independently by Workers
+ */
+class Tile {
+  constructor(x, y, width, height) {
+    this.x = x; // The properties of a Tile object
+    this.y = y; // represents the position and size
+    this.width = width; // of the tile within a larger
+    this.height = height; // rectangle.
+  }
+
+  // This static methid is a generator that divides a rectangle of the
+  // specified width and height into the specified number of rows and
+  // columns and yields numRows*numCols Tile objects to cover the rectangle.
+  static *tiles(width, height, numRows, numCols) {
+    let columnWidth = Math.ceil(width / numCols);
+    let rowHeight = Math.ceil(height / numRows);
+
+    for (let row = 0; row < numRows; row++) {
+      // Height of most rows or height or last row
+      let tileHeight =
+        row < numRows - 1 ? rowHeight : height - rowHeight * (numRows - 1);
+      for (let col = 0; col < numCols; col++) {
+        let tileWidth =
+          col < numCols - 1 ? columnWidth : width - columnWidth * (numCols - 1); // and last column
+        yield new Tile(
+          col * columnWidth,
+          row * rowHeight,
+          tileWidth,
+          tileHeight,
+        );
+      }
+    }
+  }
+}
+
+class WorkerPool {
+  constructor() {}
+}
