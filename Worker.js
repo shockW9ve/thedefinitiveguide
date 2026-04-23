@@ -164,5 +164,27 @@ class WorkerPool {
   }
 
   // This method adds work to the worker pool and returns a Promise that
-  addWork(worker) {}
+  // will resolve with a worker's response when the work is done. The work
+  // is a value to be passed to a worker with postMessage(). If there is an
+  // idle worker, the work message will be sent immediately. Otherwise it
+  // will be queued untill a worker is available
+  addWork(work) {
+    return new Promise((resolve, reject) => {
+      if (this.idleWorkers.length > 0) {
+        let worker = this.idleWorkers.pop();
+        this.workerMap.set(worker, [resolve, reject]);
+        worker.postMessage(work);
+      } else {
+        this.workQueue.push([work, resolve, reject]);
+      }
+    });
+  }
+}
+
+/*
+ *
+ */
+class PageState {
+  // This factory method returns an initial state to display the entire set.
+  static initialState() {}
 }
