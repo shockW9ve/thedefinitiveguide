@@ -182,9 +182,65 @@ class WorkerPool {
 }
 
 /*
+ * This class holds the state information necesarry to render a Mendelbrot set.
+ * The cx and cy properties give the point in the complex plane that is the
+ * center of the image. The perPixel propert specifies how much the real and
+ * imaginary parts of that complex number changes for each pixel of the image.
+ * The maxIterations property specifies how hard we work to compute the set.
+ * Larger numbers require more computation but produce criper images.
+ * Note that the size of the canvas is not part of the state. Given cx, cy and
+ * perPixel we simply render whatever portion of the Mandelbrot set first in
+ * the canvas at its current size.
  *
+ * Objects of this type are used with history.pushState() and are used to read
+ * the desired state frm a bookmarked or shared URL.
  */
 class PageState {
   // This factory method returns an initial state to display the entire set.
-  static initialState() {}
+  static initialState() {
+    let s = new PageState();
+    s.cx = -0.5;
+    s.cy = 0;
+    s.perPixel = 3 / window.innerHeight;
+    s.maxIterations = 500;
+    return s;
+  }
+
+  // This factory method obtains state from a URL, or returns null if
+  // a valid state could not be read from the URL.
+  static fromURL(url) {
+    let s = new PageState();
+    let u = new URL(url); // Initialize state from the url's search params
+    s.cx = parseFloat(u.searchParams.get("cx"));
+    s.cy = parseFloat(u.searchParams.get("cy"));
+    s.perPixel = parseFloat(u.searchParams.get("pp"));
+    s.maxIterations = parseFloat(u.searchParams.get("it"));
+    // If we got valid values, return the PageState object, other null
+    return isNaN(s.cx) ||
+      isNaN(s.cy) ||
+      isNaN(s.perPixel) ||
+      isNaN(s.maxIterations)
+      ? null
+      : s;
+  }
+
+  // This instance method encodes the current state into the search
+  // parameters of the browser's current location
+  toUrl() {
+    let u = new URL(window.location);
+    u.searchParams.set("cx", this.cx);
+    u.searchParams.set("cy", this.cy);
+    u.searchParams.set("pp", this.perPixel);
+    u.searchParams.set("it", this.maxIterations);
+    return u.href;
+  }
 }
+
+// These constants control the parallelism of the Mandelbrot set computation.
+// You may need to adjust them to get optimum performance on your computer.
+const ROWS = 3,
+  COLS = 4,
+  NUMWORKERS = navigator.hardwareConcurrency || 2;
+
+// This is the main class of our Mandelbrot set program. Simply invoke the
+//
