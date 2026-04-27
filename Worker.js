@@ -243,4 +243,45 @@ const ROWS = 3,
   NUMWORKERS = navigator.hardwareConcurrency || 2;
 
 // This is the main class of our Mandelbrot set program. Simply invoke the
-//
+// constructor function with the <canvas> element to render into. The program
+// assumes that this <canvas> element is styled so that it is always as big
+// as the browser window
+class MandelbrotCanvas {
+  constructor(canvas) {
+    // Store the vancas, get its context object, and initialize a WorkerPool
+
+    this.canvas = canvas;
+    this.context = canvas.getContext("2d");
+    this.workerPool = new WorkerPool(NUMWORKERS, "mandelbrotWorker.js");
+
+    // Define some properties that we'll use later
+    this.tiles = null; // Subregions of the canvas
+    this.pendingRender = null; // Wre're not currently rendering
+    this.wantsRerender = false; // No render is currenly requested
+    this.resizeTimer = null; // Prevents usfrom resizing too frequently
+    this.colorTable = null; // For converting raw data to pixel values.
+
+    // Set up our event handlers
+    this.canvas.addEventListener("pointerdown", (e) => this.handlePointer(e));
+    window.addEventListener("keydown", (e) => this.handleKey(e));
+    window.addEventListener("resize", (e) => this.handleResize(e));
+    window.addEventListener("popstate", (e) => this.setState(e.state, false));
+
+    // Initialize our state from the URL or start with the initial state.
+    this.state = PageState.fromURL(window.location || PageState.initialState());
+
+    // Save this state with the history mechanism
+    history.replaceState(this.state, "", this.state.toUrl());
+
+    // Set the canvas size and get an arry of tiles that cover it.
+    this.setSize();
+
+    // And render the Mandelbrot set into the canvas.
+    this.render();
+  }
+
+  // Set the canvas size and initialie an array of Tile objects. This
+  // method is called from the constructor and also by the handleResize()
+  // method when the broser window is resized.
+  setSize() {}
+}
