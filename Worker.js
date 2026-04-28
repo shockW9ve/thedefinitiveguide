@@ -280,8 +280,61 @@ class MandelbrotCanvas {
     this.render();
   }
 
-  // Set the canvas size and initialie an array of Tile objects. This
+  // Set the canvas size and initialize an array of Tile objects. This
   // method is called from the constructor and also by the handleResize()
-  // method when the broser window is resized.
-  setSize() {}
+  // method when the browser window is resized.
+  setSize() {
+    this.width = this.canvas.width = window.innerWidth;
+    this.height = this.canvas.height = window.innerHeight;
+    this.tiles = [...Tile.tiles(this.width, this.height, ROWS, COLS)];
+  }
+
+  // This function makes a change to the PageState, then re-renders the
+  // Mandelbrot set using that new state, and also saves the new state with
+  // history.pushState(). If the first argument is a function that function
+  // will be called with the state object as its argument and should make
+  // changes to the state. If the first argument is an object, then we simply
+  // copy the properties of that object into the state object. If the otional
+  // second argument if false, then the new state will not be saved. (We
+  // do this when calling setState in response to a popstate event.)
+  setState(f, save = true) {
+    // If the argument is a function, call it to update the state.
+    // Otherwise, copy its properties into the current state.
+    if (typeof f === "function") {
+      f(this.state);
+    } else {
+      for (let property in f) {
+        this.state[property] = f[property];
+      }
+    }
+
+    // In either case, start rendering the new state ASAP.
+    this.render();
+
+    // Normally we save the new state. Except when we're called with
+    // a second arugment of false which we do when we get a popstate event.
+    if (save) {
+      history.pushState(this.state, "".this.state.toURL());
+    }
+  }
+
+  // This method asynchronously draw the portion of the Mandelbrot set
+  // specified by the PageState object into the canvas. It is called by
+  // resize event handler when the size of the canvas changes.
+  render() {
+    // Sometimes the user may use the keyboard or mouse to request renders
+    // more quickly than we can perform them. We don't want to submit all
+    // just make a note that a new render is needed, and when the current
+    // render completes, we'll render the current state, possibly skipping
+    // multiple intermediate states.
+    if (this.pendingRender) {
+      // If we're already rendering,
+      this.wantsRerender = true; // make a note to rerender later
+      return; // and don't do anything more now.
+    }
+
+    // Get our state variables and compute the complex number for the
+    // upper left corner of the canvas.
+    let { cx, cy, perPixel, maxIterations } = this.state;
+  }
 }
