@@ -357,51 +357,80 @@ class MandelbrotCanvas {
     // Tile object, an ImageData object that includes iteration counts
     // instead of pixel values, and the minimum and maximum iterations
     // for that tile.
-    this.pendingRender = Promise.all(promises).then((responses) => {
-      // First, find the overall max and min iterations over all tiles.
-      // We need thse numbers so we can aggin colors to the pixels.
-      let min = maxIterations,
-        max = 0;
-      for (let r of responses) {
-        if (r.min < min) min = r.min;
-        if (r.max > max) max = r.max;
-      }
-
-      // Now we need a way to convert the raw iteration counts from the
-      // workers into pixel colors that will be displayed in the canvas.
-      // We know that all the pixels have between min and max iterations
-      // so we precompute the colors for each iteration count and store
-      // them in the colorTable array.
-
-      // If we haven't allocated a color table yet, or if it is no longer
-      // the right size, then allocate a new one.
-      if (!this.colorTable || this.colorTable.length !== maxIterations + 1) {
-        this.colorTable = new Uint32Array(maxIterations + 1);
-      }
-
-      // Given the max and the min, compute appropriate values in the
-      // color table. Pixels in the set will be colored fully opaque
-      // black. Pixel outside the set wil be translucent black with higher
-      // iteration counts resulting in higher opacity. Pixels with
-      // minimum iteration counts will be transparent and the white
-      // background will show through, resulting in a grayscale image.
-      if (min === max) {
-        // If all the pixels are the same
-        // then make them all black
-        if (min === maxIterations) {
-          this.colorTable[min] = 0xff000000;
-        } else {
-          // Or all transparent.
-          this.colorTable[min] = 0;
+    this.pendingRender = Promise.all(promises)
+      .then((responses) => {
+        // First, find the overall max and min iterations over all tiles.
+        // We need thse numbers so we can aggin colors to the pixels.
+        let min = maxIterations,
+          max = 0;
+        for (let r of responses) {
+          if (r.min < min) min = r.min;
+          if (r.max > max) max = r.max;
         }
-      } else {
-        // In normal case where min and max are different, use a
-        // logarithic scale to assign each possible iteration count and
-        // opacity between 0 and 255, and then use the shift left
-        // operator to turn that into a pixel value.
-        let maxlog = Math.log(1 + max - min);
-        for (let i = min; i <= max; i++) {}
-      }
-    });
+
+        // Now we need a way to convert the raw iteration counts from the
+        // workers into pixel colors that will be displayed in the canvas.
+        // We know that all the pixels have between min and max iterations
+        // so we precompute the colors for each iteration count and store
+        // them in the colorTable array.
+
+        // If we haven't allocated a color table yet, or if it is no longer
+        // the right size, then allocate a new one.
+        if (!this.colorTable || this.colorTable.length !== maxIterations + 1) {
+          this.colorTable = new Uint32Array(maxIterations + 1);
+        }
+
+        // Given the max and the min, compute appropriate values in the
+        // color table. Pixels in the set will be colored fully opaque
+        // black. Pixel outside the set wil be translucent black with higher
+        // iteration counts resulting in higher opacity. Pixels with
+        // minimum iteration counts will be transparent and the white
+        // background will show through, resulting in a grayscale image.
+        if (min === max) {
+          // If all the pixels are the same
+          // then make them all black
+          if (min === maxIterations) {
+            this.colorTable[min] = 0xff000000;
+          } else {
+            // Or all transparent.
+            this.colorTable[min] = 0;
+          }
+        } else {
+          // In normal case where min and max are different, use a
+          // logarithic scale to assign each possible iteration count and
+          // opacity between 0 and 255, and then use the shift left
+          // operator to turn that into a pixel value.
+          let maxlog = Math.log(1 + max - min);
+          for (let i = min; i <= max; i++) {
+            this.colorTable[i] =
+              Math.ceil((Math.log(1 + i - min) / maxlog) * 255) << 24;
+          }
+        }
+
+        // Now translate the iteration numbers in each response's
+        // ImageData to colors frm the colorTable.
+        for (let r of responses) {
+          let iterations = new Uinit32Array(r.imageData.data.buffer);
+          for (let i = 0; i < iterations.length; i++) {
+            iterations[i] = this.colorTable[iterations[i]];
+          }
+        }
+
+        // Finally, render all the imageData objects into their
+        // corresponding tiles of the canvas using putImageData().
+        // (First, though, remove any CSS transforms on the canvas that may
+        // have been set by the pointerdown event handler.)
+        this.canvas.style.transform = "";
+        for (let r of responses) {
+          this.context.putImageData(r.imageData, r.tile.x, r.tile.y);
+        }
+      })
+      .catch((reason) => {
+        // If anything went wrong in any of our Promises, we'll log
+        // an error here. This shouldn't happen, but this will help with
+        // debugging if it does.
+        console.error("Promise rejected in render():", reason);
+      })
+      .finally(() => {});
   }
 }
