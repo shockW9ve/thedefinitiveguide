@@ -431,6 +431,61 @@ class MandelbrotCanvas {
         // debugging if it does.
         console.error("Promise rejected in render():", reason);
       })
-      .finally(() => {});
+      .finally(() => {
+        // When we are done rendering, clear the pendingRender flags
+        this.pendingRender = null;
+        // And if render requests came in while we were busy, rerender now.
+        if (this.wantsRerender) {
+          this.wantsRerender = false;
+          this.render();
+        }
+      });
+  }
+
+  // If the user resizes the window, this function will be called repeatedly/
+  // Resizing a canvas  and rerendering the Mandlebrot set is an expensive
+  // operation that we can't do multiple times a second, so we use a timer
+  // resize event was received
+  handleResize(event) {
+    // If we were already deferring a resize, clear it.
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    // And defer this resize indead.
+    this.resizeTimer = setTimeout(() => {
+      this.resizeTimer = null; // Note that resize has been handled
+      this.setSize(); // Resize canvas and tiles
+      this.render(); // Rerender at the new size
+    }, 200);
+  }
+
+  // If the user presses a key, this event handler will be called.
+  // We call setState() in response to various keys, and setState() renders
+  // the new state, updates the URL, and saves the state in browser history.
+  handleKey(event) {
+    switch (event.key) {
+      case "Escape": // Type Escape to go back to the initial state
+        this.setState(PageState.initialState());
+        break;
+      case "+": // Type + to increase the number of iterations
+        this.setState((s) => {
+          s.maxIterations = Math.round(s.maxIterations * 1.5);
+        });
+        break;
+      case "-": // Type - to decrease the number of iterations
+        this.setState((s) => {
+          s.maxIterations = Math.round(s.maxIterations / 1.5);
+          if (s.maxIterations) s.maxIterations = 1;
+        });
+        break;
+      case "":
+        break;
+      case "":
+        break;
+      case "":
+        break;
+      case "":
+        break;
+      case "":
+        break;
+    }
   }
 }
