@@ -476,16 +476,29 @@ class MandelbrotCanvas {
           if (s.maxIterations) s.maxIterations = 1;
         });
         break;
-      case "":
+      case "o": // Type o to zoom out
+        this.setState((s) => (s.perPixel *= 2));
         break;
-      case "":
+      case "ArrowUp": // Up arrow to scroll up
+        this.setState((s) => (s.cy -= (this.height / 10) * s.perPixel));
         break;
-      case "":
+      case "ArrowDown": // Down arrow to scroll down
+        this.setState((s) => (s.cy += (this.height / 10) * s.perPixel));
         break;
-      case "":
+      case "ArrowLeft": // Left arrow to scroll left
+        this.setState((s) => (s.cx -= (this.width / 10) * s.perPixel));
         break;
-      case "":
+      case "ArrowRight": // Right
+        this.setState((s) => (s.cx += (this.width / 10) * s.perPixel));
         break;
     }
   }
+
+  // This method is called when we get a pointerdown event on the canvas.
+  // the pointerdown event might be the start of a zoom gesture (a click or
+  // tap) or a pan gesture (a drag). This handler registers handlers for
+  // the pointermove and pointerup events in order to respond to the rest
+  // of the gesture. (These two extra handlers are removed when the gesture
+  // ends with a pointerup.)
+  handlerPointer(event) {}
 }
