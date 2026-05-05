@@ -500,5 +500,30 @@ class MandelbrotCanvas {
   // the pointermove and pointerup events in order to respond to the rest
   // of the gesture. (These two extra handlers are removed when the gesture
   // ends with a pointerup.)
-  handlerPointer(event) {}
+  handlerPointer(event) {
+    // The pixel coordinates and time of the initial pointer down.
+    // Because the canvas is as big as the window, these event coordinates
+    // are also canvas coordinates.
+    const x0 = event.clientX,
+      y0 = event.clientY,
+      t0 = Date.now();
+
+    // This is the handler for move events.
+    const pointerMoveHandler = (event) => {
+      // How much have we moved, and how much time has passed?
+      let dx = event.clientX - x0,
+        dy = event.clientY - y0,
+        dt = Date.now() - t0;
+
+      // If the pointer has moved enough or enough time has passed that
+      // this is not a regular click, then use CSS to pan the display.
+      // (We will rerender it for real when we get the pointerup event.)
+      if (dx > 10 || dy > 10 || dt > 500) {
+        this.canvas.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+    };
+
+    // This is the handler for pointerup events
+    const pointerUpHander = (event) => {};
+  }
 }
