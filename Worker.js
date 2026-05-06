@@ -524,6 +524,25 @@ class MandelbrotCanvas {
     };
 
     // This is the handler for pointerup events
-    const pointerUpHander = (event) => {};
+    const pointerUpHandler = (event) => {
+      // When the pointer goes up, the gesture is over, so remove
+      // the move and up  handlers until the next gesture.
+      this.canvas.removeEventlistener("pointermove", pointerMoveHandler);
+      this.canvas.removeEventlistener("pointerup", pointerUpHandler);
+
+      // How much did the pointer move, and how much time passed?
+      const dx = event.clientX - x0,
+        dy = event.clientY - y0,
+        dt = Date.now() - t0;
+      // Unpack the state object into indevidual constants.
+      const { cx, cy, perPixel } = this.state;
+
+      // If the pointer moved far enough or if enough time passed, the
+      // this was a pan gesture, and we need to change state to change
+      // the center point. Othersie, the user clicked or tapped on a
+      // point and we need to center and zoom in on that point.
+      if (dx > 10 || dy > 10 || dt > 500) {
+      }
+    };
   }
 }
