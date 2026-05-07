@@ -542,6 +542,15 @@ class MandelbrotCanvas {
       // the center point. Othersie, the user clicked or tapped on a
       // point and we need to center and zoom in on that point.
       if (dx > 10 || dy > 10 || dt > 500) {
+        // The user panned the image by (dx, dy) pixels.
+        // Convert those values to offsets in the complex plane.
+        this.setState({ cx: cx - dx * perPixel, cy: cy - dy * perPixel });
+      } else {
+        // The user clicked. Compute how many pixels the center moves
+        let cdx = x0 - this.width / 2;
+        let cdy = y0 - this.height / 2;
+
+        // Use CSS to quickly and temporarily zoom in
       }
     };
   }
