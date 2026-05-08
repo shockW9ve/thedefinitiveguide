@@ -551,7 +551,24 @@ class MandelbrotCanvas {
         let cdy = y0 - this.height / 2;
 
         // Use CSS to quickly and temporarily zoom in
+        this.canvas.style.transform = `translate(${-cdx * 2}, ${-cdy * 2}px) scale(2)`;
+
+        // Set the complex coordinates of the new center point and
+        // zoom in by a factor of 2.
+        this.setState((s) => {
+          s.cx += cdx * s.perPixel;
+          s.cy += cdy * s.perPixel;
+          s.perPixel /= 2;
+        });
       }
     };
+
+    // When the user begins a gesture we register handlers for the
+    // pointermove and pointerup events that follow.
+    this.canvas.addEventListener("pointermove", pointerMoveHandler);
+    this.canvas.addEventListener("pointerup", pointerUpHandler);
   }
 }
+
+// Finally, here's how we set up the canvas. Note that this Javascript file
+// is self-sufficient. The HTML file only needs to include this one <script>.
