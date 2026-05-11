@@ -399,7 +399,7 @@ class MandelbrotCanvas {
           s.maxIterations = Math.round(s.maxIterations * 1.5);
         });
         break;
-      case "-": // Type - to decrease the number of iterations
+      case "-":
         this.setState((s) => {
           s.maxIterations = Math.round(s.maxIterations / 1.5);
           if (s.maxIterations < 1) s.maxIterations = 1;
@@ -447,7 +447,8 @@ class MandelbrotCanvas {
       // If the pointer has moved enough or enough time has passed that
       // this is not a regular click, then use CSS to pan the display.
       // (We will rerender it for real when we get the pointerup event.)
-      if (dx > 10 || dy > 10 || dt > 500) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || dt > 500) {
+        // if (dx > 10 || dy > 10 || dt > 500) {
         this.canvas.style.transform = `translate(${dx}px, ${dy}px)`;
       }
     };
@@ -470,7 +471,8 @@ class MandelbrotCanvas {
       // this was a pan gesture, and we need to change state to change
       // the center point. Othersie, the user clicked or tapped on a
       // point and we need to center and zoom in on that point.
-      if (dx > 10 || dy > 10 || dt > 500) {
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10 || dt > 500) {
+        // if (dx > 10 || dy > 10 || dt > 500) {
         // The user panned the image by (dx, dy) pixels.
         // Convert those values to offsets in the complex plane.
         this.setState({ cx: cx - dx * perPixel, cy: cy - dy * perPixel });
@@ -480,7 +482,7 @@ class MandelbrotCanvas {
         let cdy = y0 - this.height / 2;
 
         // Use CSS to quickly and temporarily zoom in
-        this.canvas.style.transform = `translate(${-cdx * 2}, ${-cdy * 2}px) scale(2)`;
+        this.canvas.style.transform = `translate(${-cdx * 2}px, ${-cdy * 2}px) scale(2)`;
 
         // Set the complex coordinates of the new center point and
         // zoom in by a factor of 2.
